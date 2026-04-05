@@ -24,6 +24,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 from deep_translator import GoogleTranslator
+from langdetect import DetectorFactory, LangDetectException, detect
 from pypdf import PdfReader
 
 try:
@@ -38,6 +39,7 @@ USER_AGENT = "Mozilla/5.0 (compatible; STIL2023Scraper/1.0)"
 TRANSLATION_MAX_CHARS = 4000
 
 TOKEN_PATTERN = re.compile(r"\w+|[^\w\s]", re.UNICODE)
+DetectorFactory.seed = 0
 
 STOPWORDS = {
     "en": {
@@ -315,6 +317,22 @@ def infer_language_from_code(code: Optional[str], fallback_title: str) -> str:
     return "Inglês"
 
 
+def detect_language_label(title: str, abstract_text: str, code: Optional[str]) -> str:
+    """Decide o idioma usando detector automático e metadados como fallback."""
+
+    sample = normalize_whitespace(" ".join(part for part in (title, abstract_text) if part))
+    if len(sample) >= 20:
+        try:
+            detected = detect(sample)
+            if detected.startswith("pt"):
+                return "Português"
+            if detected.startswith("en"):
+                return "Inglês"
+        except LangDetectException:
+            pass
+    return infer_language_from_code(code, title)
+
+
 def translate_long_text(text: str, max_chars: int = TRANSLATION_MAX_CHARS) -> str:
     """Traduz textos longos em blocos menores, preservando o original em caso de falha."""
 
@@ -585,7 +603,6 @@ def parse_article_page(
 
     title = normalize_whitespace((meta.get("citation_title") or [entry.title])[0]).rstrip(".")
     language_code = (meta.get("DC.Language") or [""])[0].strip().lower()
-    language_label = infer_language_from_code(language_code, title)
 
     # Os autores visíveis na página costumam ter afiliação e, às vezes, ORCID.
     authors = []
@@ -620,6 +637,7 @@ def parse_article_page(
         abstract_text = normalize_whitespace(abstract_node.get_text(" ", strip=True))
     if not abstract_text:
         abstract_text = normalize_whitespace((meta.get("DC.Description") or [""])[0])
+    language_label = detect_language_label(title, abstract_text, language_code)
 
     keywords_node = soup.select_one("div.item.keywords span.value")
     keywords = []
