@@ -124,7 +124,7 @@ def normalize_whitespace(value: str) -> str:
 
 
 def fix_mojibake(value: str) -> str:
-    """Corrige casos comuns de mojibake, como 'InglÃªs' -> 'Inglês'."""
+    """Corrige casos comuns de mojibake causados por decodificação incorreta."""
 
     if not value:
         return value
@@ -162,6 +162,12 @@ def infer_language_from_code(code: Optional[str], fallback_title: str) -> str:
     normalized = normalize_key(fallback_title)
     pt_markers = (" de ", " do ", " da ", " em ", " para ", " portugues", " analise ")
     return "Português" if any(marker in f" {normalized} " for marker in pt_markers) else "Inglês"
+
+
+def likely_portuguese_title(title: str) -> bool:
+    """Indica se o título parece estar em português com base em heurísticas leves."""
+
+    return infer_language_from_code(code=None, fallback_title=title) == "Português"
 
 
 def format_date(date_value: Optional[str]) -> str:
@@ -411,7 +417,12 @@ def parse_article_page(
     }
 
 
-def build_dataset(output_path: Path, download_dir: Path, limit: Optional[int]) -> None:
+def build_dataset(
+    output_path: Path,
+    download_dir: Path,
+    limit: Optional[int],
+    prioritize_portuguese: bool,
+) -> None:
     """
     Coordena a extração completa e grava o dataset final em disco.
 
@@ -419,6 +430,7 @@ def build_dataset(output_path: Path, download_dir: Path, limit: Optional[int]) -
     - output_path: caminho do JSON de saída
     - download_dir: diretório dos PDFs
     - limit: quantidade máxima de artigos a processar
+    - prioritize_portuguese: processa primeiro títulos que parecem estar em português
     """
 
     session = requests.Session()
@@ -429,6 +441,8 @@ def build_dataset(output_path: Path, download_dir: Path, limit: Optional[int]) -
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     entries = parse_dblp_toc(session)
+    if prioritize_portuguese:
+        entries = sorted(entries, key=lambda entry: (not likely_portuguese_title(entry.title), entry.title.casefold()))
     if limit is not None:
         entries = entries[:limit]
 
@@ -469,12 +483,18 @@ def main() -> None:
         default=None,
         help="Limita a quantidade de artigos processados.",
     )
+    parser.add_argument(
+        "--prioritize-portuguese",
+        action="store_true",
+        help="Processa primeiro artigos cujo título parece estar em português.",
+    )
     args = parser.parse_args()
 
     build_dataset(
         output_path=Path(args.output),
         download_dir=Path(args.download_dir),
         limit=args.limit,
+        prioritize_portuguese=args.prioritize_portuguese,
     )
 
 
