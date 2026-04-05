@@ -164,6 +164,10 @@ def repair_broken_diacritics(value: str) -> str:
     for pattern, replacement in targeted_patterns:
         repaired = re.sub(pattern, replacement, repaired, flags=re.IGNORECASE)
 
+    # Remove espaços espúrios quando o PDF separa a palavra do diacrítico solto.
+    repaired = re.sub(r"(?<=[A-Za-z])\s+(?=[´`^˜~¨¸])", "", repaired)
+    repaired = re.sub(r"(?<=[´`^˜~¨¸])\s+(?=[A-Za-z])", "", repaired)
+
     spacing_to_combining = {
         "´": "\u0301",
         "`": "\u0300",
