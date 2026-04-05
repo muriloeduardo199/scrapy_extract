@@ -25,6 +25,11 @@ import requests
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
 
+try:
+    import fitz
+except ImportError:  # pragma: no cover
+    fitz = None
+
 
 DBLP_TOC_URL = "https://dblp.org/db/conf/stil/stil2023.html"
 REQUEST_TIMEOUT = 30
@@ -199,7 +204,22 @@ def split_references(ref_block: Optional[BeautifulSoup]) -> List[str]:
 
 
 def extract_pdf_text(content: bytes) -> str:
-    """Extrai e concatena o texto de todas as páginas do PDF."""
+    """Extrai texto do PDF, com fallback para PyMuPDF quando necessário."""
+
+    primary_text = extract_pdf_text_with_pypdf(content)
+    if primary_text and not text_looks_corrupted(primary_text):
+        return primary_text
+
+    fallback_text = extract_pdf_text_with_pymupdf(content)
+    if not fallback_text:
+        return primary_text
+    if not primary_text:
+        return fallback_text
+    return fallback_text if score_text_quality(fallback_text) >= score_text_quality(primary_text) else primary_text
+
+
+def extract_pdf_text_with_pypdf(content: bytes) -> str:
+    """Extrai e concatena o texto de todas as páginas usando pypdf."""
 
     reader = PdfReader(BytesIO(content))
     pages = []
@@ -208,6 +228,46 @@ def extract_pdf_text(content: bytes) -> str:
         if text:
             pages.append(text)
     return normalize_whitespace("\n".join(pages))
+
+
+def extract_pdf_text_with_pymupdf(content: bytes) -> str:
+    """Extrai e concatena o texto de todas as páginas usando PyMuPDF."""
+
+    if fitz is None:
+        return ""
+
+    document = fitz.open(stream=content, filetype="pdf")
+    try:
+        pages = []
+        for page in document:
+            text = page.get_text("text") or ""
+            if text:
+                pages.append(text)
+        return normalize_whitespace("\n".join(pages))
+    finally:
+        document.close()
+
+
+def score_text_quality(text: str) -> float:
+    """Pontua a qualidade do texto extraído penalizando artefatos comuns."""
+
+    if not text:
+        return float("-inf")
+
+    length = max(len(text), 1)
+    penalties = 0
+    penalties += text.count("?") * 3
+    penalties += len(re.findall(r"\b\w\s+[áàâãéêíóôõúç]\b", text, flags=re.IGNORECASE)) * 4
+    penalties += len(re.findall(r"[áàâãéêíóôõúç]\s+\w", text, flags=re.IGNORECASE)) * 2
+    penalties += len(re.findall(r"\b\w+\s*,\s*[a-záàâãéêíóôõúç]+\b", text, flags=re.IGNORECASE)) * 2
+    penalties += len(re.findall(r"[^\w\s]{2,}", text))
+    return len(re.findall(r"\w", text, flags=re.UNICODE)) / length - (penalties / length)
+
+
+def text_looks_corrupted(text: str) -> bool:
+    """Sinaliza texto com indícios fortes de extração ruim."""
+
+    return score_text_quality(text) < 0.55
 
 
 def heuristic_pos(token: str, language_code: str) -> str:
