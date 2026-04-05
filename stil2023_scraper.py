@@ -259,14 +259,60 @@ def normalize_key(value: str) -> str:
 def infer_language_from_code(code: Optional[str], fallback_title: str) -> str:
     """Converte o código de idioma para o rótulo esperado no JSON."""
 
-    if code == "pt":
+    normalized_code = normalize_key(code or "")
+    if normalized_code in {"pt", "pt-br", "por", "portuguese", "portugues"}:
         return "Português"
-    if code == "en":
+    if normalized_code in {"en", "en-us", "en-gb", "eng", "english", "ingles"}:
         return "Inglês"
 
     normalized = normalize_key(fallback_title)
-    pt_markers = (" de ", " do ", " da ", " em ", " para ", " portugues", " analise ")
-    return "Português" if any(marker in f" {normalized} " for marker in pt_markers) else "Inglês"
+    padded = f" {normalized} "
+    pt_markers = (
+        " de ",
+        " do ",
+        " da ",
+        " das ",
+        " dos ",
+        " em ",
+        " para ",
+        " sobre ",
+        " uma ",
+        " um ",
+        " os ",
+        " as ",
+        " nao ",
+        " linguagem ",
+        " portugues ",
+        " brasileiro ",
+        " analise ",
+        " avaliacao ",
+        " estudo ",
+    )
+    en_markers = (
+        " the ",
+        " and ",
+        " for ",
+        " with ",
+        " without ",
+        " using ",
+        " from ",
+        " into ",
+        " on ",
+        " in ",
+        " of ",
+        " a ",
+        " an ",
+        " study ",
+        " analysis ",
+        " portuguese ",
+        " brazilian ",
+        " language ",
+    )
+    pt_score = sum(marker in padded for marker in pt_markers)
+    en_score = sum(marker in padded for marker in en_markers)
+    if pt_score > en_score:
+        return "Português"
+    return "Inglês"
 
 
 def translate_long_text(text: str, max_chars: int = TRANSLATION_MAX_CHARS) -> str:
