@@ -154,7 +154,7 @@ def repair_broken_diacritics(value: str) -> str:
     if not value:
         return value
 
-    repaired = value
+    repaired = value.replace("ı", "i")
     targeted_patterns = (
         (r"c?\s*¸\s*˜\s*oes\b", "ções"),
         (r"c?\s*¸\s*˜\s*ao\b", "ção"),
@@ -165,13 +165,14 @@ def repair_broken_diacritics(value: str) -> str:
         repaired = re.sub(pattern, replacement, repaired, flags=re.IGNORECASE)
 
     # Remove espaços espúrios quando o PDF separa a palavra do diacrítico solto.
-    repaired = re.sub(r"(?<=[A-Za-z])\s+(?=[´`^˜~¨¸])", "", repaired)
-    repaired = re.sub(r"(?<=[´`^˜~¨¸])\s+(?=[A-Za-z])", "", repaired)
+    repaired = re.sub(r"(?<=[A-Za-z])\s+(?=[´`^ˆ˜~¨¸])", "", repaired)
+    repaired = re.sub(r"(?<=[´`^ˆ˜~¨¸])\s+(?=[A-Za-z])", "", repaired)
 
     spacing_to_combining = {
         "´": "\u0301",
         "`": "\u0300",
         "^": "\u0302",
+        "ˆ": "\u0302",
         "˜": "\u0303",
         "~": "\u0303",
         "¨": "\u0308",
@@ -183,13 +184,59 @@ def repair_broken_diacritics(value: str) -> str:
             return base_char + mark_char
         return unicodedata.normalize("NFC", base_char + spacing_to_combining[mark_char])
 
+    def transfer_marks_from_accented_consonants(text: str) -> str:
+        result = []
+        index = 0
+        while index < len(text):
+            current = text[index]
+            decomposed = unicodedata.normalize("NFD", current)
+            base_char = decomposed[:1]
+            marks = decomposed[1:]
+
+            if marks and base_char.isalpha() and base_char.lower() not in "aeiou":
+                next_index = index + 1
+                if next_index < len(text) and text[next_index].isalpha() and text[next_index].lower() in "aeiou":
+                    plain_current = unicodedata.normalize("NFC", base_char)
+                    next_decomposed = unicodedata.normalize("NFD", text[next_index])
+                    combined_next = unicodedata.normalize("NFC", next_decomposed[:1] + marks + next_decomposed[1:])
+                    result.append(plain_current)
+                    result.append(combined_next)
+                    index += 2
+                    continue
+                result.append(unicodedata.normalize("NFC", base_char))
+                index += 1
+                continue
+
+            result.append(current)
+            index += 1
+
+        return "".join(result)
+
+    repaired = transfer_marks_from_accented_consonants(repaired)
+
+    # Quando a marca fica entre duas letras, quase sempre ela pertence à vogal seguinte.
     repaired = re.sub(
-        r"([A-Za-z])\s*([´`^˜~¨¸])",
+        r"([A-Za-z])([´`^ˆ˜~¨])([AEIOUaeiou])",
+        lambda match: match.group(1) + compose(match.group(3), match.group(2)),
+        repaired,
+    )
+    repaired = re.sub(
+        r"([cC])(¸)([A-Za-z])",
+        lambda match: compose(match.group(1), match.group(2)) + match.group(3),
+        repaired,
+    )
+    repaired = re.sub(
+        r"([A-Za-z])([´`^ˆ˜~¨])([A-Za-z])",
+        lambda match: match.group(1) + compose(match.group(3), match.group(2)),
+        repaired,
+    )
+    repaired = re.sub(
+        r"([A-Za-z])\s*([´`^ˆ˜~¨¸])",
         lambda match: compose(match.group(1), match.group(2)),
         repaired,
     )
     repaired = re.sub(
-        r"([´`^˜~¨¸])\s*([A-Za-z])",
+        r"([´`^ˆ˜~¨¸])\s*([A-Za-z])",
         lambda match: compose(match.group(2), match.group(1)),
         repaired,
     )
