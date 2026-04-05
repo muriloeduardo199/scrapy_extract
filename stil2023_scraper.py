@@ -645,18 +645,22 @@ def parse_article_page(
     title_pt = title
     abstract_text_pt = abstract_text
     article_text_pt = article_text
+    translated_to_pt = False
 
     if language_label == "Inglês":
         print(f"Traduzindo conteúdo de: {title}")
         title_pt = translate_long_text(title)
         abstract_text_pt = translate_long_text(abstract_text)
         article_text_pt = translate_long_text(article_text)
+        translated_to_pt = True
 
     return {
         "titulo": title,
         "titulo_pt": title_pt,
         "informacoes_url": article_url,
         "idioma": language_label,
+        "idioma_original": language_label,
+        "traduzido_para_pt": translated_to_pt,
         "storage_key": storage_key,
         "autores": authors,
         "data_publicacao": format_date((meta.get("citation_date") or [""])[0]),
