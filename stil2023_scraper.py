@@ -125,7 +125,7 @@ class DblpEntry:
 def normalize_whitespace(value: str) -> str:
     """Remove espaços duplicados e tenta corrigir texto com encoding quebrado."""
 
-    return re.sub(r"\s+", " ", fix_mojibake(value or "")).strip()
+    return re.sub(r"\s+", " ", repair_broken_diacritics(fix_mojibake(value or ""))).strip()
 
 
 def fix_mojibake(value: str) -> str:
@@ -146,6 +146,50 @@ def fix_mojibake(value: str) -> str:
     original_hits = sum(value.count(char) for char in suspicious)
     repaired_hits = sum(repaired.count(char) for char in suspicious)
     return repaired if repaired_hits < original_hits else value
+
+
+def repair_broken_diacritics(value: str) -> str:
+    """Recompõe acentos quebrados quando o PDF extrai diacríticos soltos."""
+
+    if not value:
+        return value
+
+    repaired = value
+    targeted_patterns = (
+        (r"c?\s*¸\s*˜\s*oes\b", "ções"),
+        (r"c?\s*¸\s*˜\s*ao\b", "ção"),
+        (r"˜\s*oes\b", "ões"),
+        (r"˜\s*ao\b", "ão"),
+    )
+    for pattern, replacement in targeted_patterns:
+        repaired = re.sub(pattern, replacement, repaired, flags=re.IGNORECASE)
+
+    spacing_to_combining = {
+        "´": "\u0301",
+        "`": "\u0300",
+        "^": "\u0302",
+        "˜": "\u0303",
+        "~": "\u0303",
+        "¨": "\u0308",
+        "¸": "\u0327",
+    }
+
+    def compose(base_char: str, mark_char: str) -> str:
+        if mark_char == "¸" and base_char not in {"c", "C"}:
+            return base_char + mark_char
+        return unicodedata.normalize("NFC", base_char + spacing_to_combining[mark_char])
+
+    repaired = re.sub(
+        r"([A-Za-z])\s*([´`^˜~¨¸])",
+        lambda match: compose(match.group(1), match.group(2)),
+        repaired,
+    )
+    repaired = re.sub(
+        r"([´`^˜~¨¸])\s*([A-Za-z])",
+        lambda match: compose(match.group(2), match.group(1)),
+        repaired,
+    )
+    return repaired
 
 
 def normalize_key(value: str) -> str:
