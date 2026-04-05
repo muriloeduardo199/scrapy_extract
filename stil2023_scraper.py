@@ -23,6 +23,7 @@ from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
+from deep_translator import GoogleTranslator
 from pypdf import PdfReader
 
 try:
@@ -34,6 +35,7 @@ except ImportError:  # pragma: no cover
 DBLP_TOC_URL = "https://dblp.org/db/conf/stil/stil2023.html"
 REQUEST_TIMEOUT = 30
 USER_AGENT = "Mozilla/5.0 (compatible; STIL2023Scraper/1.0)"
+TRANSLATION_MAX_CHARS = 4000
 
 TOKEN_PATTERN = re.compile(r"\w+|[^\w\s]", re.UNICODE)
 
@@ -120,6 +122,9 @@ class DblpEntry:
     ee_url: Optional[str]
     details_url: Optional[str]
     authors: List[Dict[str, Optional[str]]]
+
+
+translator = GoogleTranslator(source="en", target="pt")
 
 
 def normalize_whitespace(value: str) -> str:
@@ -262,6 +267,43 @@ def infer_language_from_code(code: Optional[str], fallback_title: str) -> str:
     normalized = normalize_key(fallback_title)
     pt_markers = (" de ", " do ", " da ", " em ", " para ", " portugues", " analise ")
     return "Português" if any(marker in f" {normalized} " for marker in pt_markers) else "Inglês"
+
+
+def translate_long_text(text: str, max_chars: int = TRANSLATION_MAX_CHARS) -> str:
+    """Traduz textos longos em blocos menores, preservando o original em caso de falha."""
+
+    if not text:
+        return ""
+    if len(text) <= max_chars:
+        try:
+            return normalize_whitespace(translator.translate(text))
+        except Exception:
+            return text
+
+    parts = []
+    position = 0
+    sentence_endings = (". ", "!\n", "?\n", ".\n", ";", ".\n\n")
+
+    while position < len(text):
+        end = min(position + max_chars, len(text))
+        if end < len(text):
+            best_end = position
+            for marker in sentence_endings:
+                last = text.rfind(marker, position, end)
+                if last > best_end:
+                    best_end = last + len(marker)
+            if best_end > position:
+                end = best_end
+
+        part = text[position:end].strip()
+        if part:
+            try:
+                parts.append(normalize_whitespace(translator.translate(part)))
+            except Exception:
+                parts.append(part)
+        position = end
+
+    return normalize_whitespace(" ".join(parts))
 
 
 def likely_portuguese_title(title: str) -> bool:
@@ -554,18 +596,30 @@ def parse_article_page(
         article_text = extract_pdf_text(pdf_response.content)
 
     annotations = tokenize_with_annotations(article_text, language_label)
+    title_pt = title
+    abstract_text_pt = abstract_text
+    article_text_pt = article_text
+
+    if language_label == "Inglês":
+        print(f"Traduzindo conteúdo de: {title}")
+        title_pt = translate_long_text(title)
+        abstract_text_pt = translate_long_text(abstract_text)
+        article_text_pt = translate_long_text(article_text)
 
     return {
         "titulo": title,
+        "titulo_pt": title_pt,
         "informacoes_url": article_url,
         "idioma": language_label,
         "storage_key": storage_key,
         "autores": authors,
         "data_publicacao": format_date((meta.get("citation_date") or [""])[0]),
         "resumo": abstract_text,
+        "resumo_pt": abstract_text_pt,
         "keywords": keywords,
         "referencias": references,
         "artigo_completo": article_text,
+        "artigo_completo_pt": article_text_pt,
         "artigo_tokenizado": annotations["artigo_tokenizado"],
         "pos_tagger": annotations["pos_tagger"],
         "lema": annotations["lema"],
