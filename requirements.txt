@@ -4,3 +4,4 @@ pypdf
 PyMuPDF
 deep-translator
 langdetect
+spacy

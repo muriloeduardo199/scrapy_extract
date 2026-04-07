@@ -52,6 +52,8 @@ Use Python 3.10+.
 
 ```bash
 pip install -r requirements.txt
+python -m spacy download pt_core_news_sm
+python -m spacy download en_core_web_sm
 ```
 
 ## Como executar localmente
@@ -180,4 +182,3 @@ Funções auxiliares:
 - adicionar filtros interativos ao dashboard
 - exportar gráficos automaticamente
 - salvar estatísticas em CSV ou Excel
-

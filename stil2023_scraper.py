@@ -1,4 +1,4 @@
-"""
+﻿"""
 Scraper do STIL 2023.
 
 Fluxo geral:
@@ -26,6 +26,7 @@ from bs4 import BeautifulSoup
 from deep_translator import GoogleTranslator
 from langdetect import DetectorFactory, LangDetectException, detect
 from pypdf import PdfReader
+import spacy
 
 try:
     import fitz
@@ -38,82 +39,14 @@ REQUEST_TIMEOUT = 30
 USER_AGENT = "Mozilla/5.0 (compatible; STIL2023Scraper/1.0)"
 TRANSLATION_MAX_CHARS = 4000
 
-TOKEN_PATTERN = re.compile(r"\w+|[^\w\s]", re.UNICODE)
 DetectorFactory.seed = 0
 
-STOPWORDS = {
-    "en": {
-        "the": "DET",
-        "a": "DET",
-        "an": "DET",
-        "this": "DET",
-        "that": "DET",
-        "these": "DET",
-        "those": "DET",
-        "of": "ADP",
-        "in": "ADP",
-        "on": "ADP",
-        "for": "ADP",
-        "to": "PART",
-        "and": "CCONJ",
-        "or": "CCONJ",
-        "but": "CCONJ",
-        "with": "ADP",
-        "without": "ADP",
-        "by": "ADP",
-        "from": "ADP",
-        "is": "AUX",
-        "are": "AUX",
-        "was": "AUX",
-        "were": "AUX",
-        "be": "AUX",
-        "been": "AUX",
-        "being": "AUX",
-        "it": "PRON",
-        "its": "DET",
-        "we": "PRON",
-        "our": "DET",
-        "they": "PRON",
-        "their": "DET",
-    },
-    "pt": {
-        "o": "DET",
-        "a": "DET",
-        "os": "DET",
-        "as": "DET",
-        "um": "DET",
-        "uma": "DET",
-        "uns": "DET",
-        "umas": "DET",
-        "de": "ADP",
-        "do": "ADP",
-        "da": "ADP",
-        "dos": "ADP",
-        "das": "ADP",
-        "em": "ADP",
-        "no": "ADP",
-        "na": "ADP",
-        "nos": "ADP",
-        "nas": "ADP",
-        "para": "ADP",
-        "por": "ADP",
-        "com": "ADP",
-        "sem": "ADP",
-        "e": "CCONJ",
-        "ou": "CCONJ",
-        "mas": "CCONJ",
-        "é": "AUX",
-        "são": "AUX",
-        "foi": "AUX",
-        "ser": "AUX",
-        "se": "PRON",
-        "que": "SCONJ",
-        "eu": "PRON",
-        "nós": "PRON",
-        "eles": "PRON",
-        "elas": "PRON",
-    },
+SPACY_MODEL_BY_LANGUAGE = {
+    "Português": "pt_core_news_sm",
+    "Inglês": "en_core_web_sm",
 }
+_NLP_CACHE: Dict[str, "spacy.language.Language"] = {}
+
 
 
 @dataclass
@@ -471,42 +404,38 @@ def text_looks_corrupted(text: str) -> bool:
     return score_text_quality(text) < 0.55
 
 
-def heuristic_pos(token: str, language_code: str) -> str:
-    """Atribui uma POS tag simples usando regras heurísticas."""
+def get_spacy_pipeline(language_label: str):
+    """Carrega e reutiliza o pipeline spaCy adequado para o idioma do artigo."""
 
-    lowered = token.casefold()
-    if re.fullmatch(r"\d+(?:[.,]\d+)*", token):
-        return "NUM"
-    if re.fullmatch(r"[^\w\s]", token):
-        return "PUNCT"
-    if lowered in STOPWORDS.get(language_code, {}):
-        return STOPWORDS[language_code][lowered]
-    if token[:1].isupper():
-        return "PROPN"
-    if lowered.endswith(("mente", "ly")):
-        return "ADV"
-    if lowered.endswith(("ar", "er", "ir", "ing", "ed")):
-        return "VERB"
-    if lowered.endswith(("al", "vel", "ivo", "iva", "ous", "ful", "able", "ible")):
-        return "ADJ"
-    return "NOUN"
-
-
-def heuristic_lemma(token: str) -> str:
-    """Gera um lema simplificado por normalização do token."""
-
-    if re.fullmatch(r"[^\w\s]", token):
-        return token
-    return normalize_key(token)
+    model_name = SPACY_MODEL_BY_LANGUAGE.get(language_label, SPACY_MODEL_BY_LANGUAGE["Inglês"])
+    if model_name not in _NLP_CACHE:
+        try:
+            _NLP_CACHE[model_name] = spacy.load(model_name)
+        except OSError as exc:
+            raise RuntimeError(
+                "Modelo spaCy ausente. Instale com "
+                f"'python -m spacy download {model_name}' e execute novamente."
+            ) from exc
+    return _NLP_CACHE[model_name]
 
 
 def tokenize_with_annotations(text: str, language_label: str) -> Dict[str, List[str]]:
-    """Tokeniza o texto e produz POS tags e lemas heurísticos."""
+    """Tokeniza o texto e produz POS tags e lemas usando spaCy."""
 
-    language_code = "pt" if language_label == "Português" else "en"
-    tokens = TOKEN_PATTERN.findall(text)
-    pos_tags = [heuristic_pos(token, language_code) for token in tokens]
-    lemmas = [heuristic_lemma(token) for token in tokens]
+    if not text:
+        return {
+            "artigo_tokenizado": [],
+            "pos_tagger": [],
+            "lema": [],
+        }
+
+    doc = get_spacy_pipeline(language_label)(text)
+    tokens = [token.text for token in doc]
+    pos_tags = [token.pos_ or "X" for token in doc]
+    lemmas = [
+        normalize_key(token.lemma_) if token.lemma_ and token.lemma_ != "-PRON-" else normalize_key(token.text)
+        for token in doc
+    ]
     return {
         "artigo_tokenizado": tokens,
         "pos_tagger": pos_tags,
@@ -528,7 +457,7 @@ def parse_dblp_toc(session: requests.Session) -> List[DblpEntry]:
     response.encoding = "utf-8"
     soup = BeautifulSoup(response.text, "html.parser")
     entries = []
-
+    
     for item in soup.select("li.entry.inproceedings"):
         title_node = item.select_one("cite span.title")
         if title_node is None:
@@ -777,3 +706,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
