@@ -13,6 +13,7 @@ import argparse
 import html
 import json
 import re
+import time
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime
@@ -38,6 +39,8 @@ DBLP_TOC_URL = "https://dblp.org/db/conf/stil/stil2023.html"
 REQUEST_TIMEOUT = 30
 USER_AGENT = "Mozilla/5.0 (compatible; STIL2023Scraper/1.0)"
 TRANSLATION_MAX_CHARS = 4000
+HTTP_RETRY_ATTEMPTS = 3
+HTTP_RETRY_BACKOFF_SECONDS = 5
 
 DetectorFactory.seed = 0
 
@@ -60,6 +63,35 @@ class DblpEntry:
 
 
 translator = GoogleTranslator(source="en", target="pt")
+
+
+def get_with_status(
+    session: requests.Session,
+    url: str,
+    *,
+    timeout: int = REQUEST_TIMEOUT,
+    allow_redirects: bool = True,
+    label: str = "recurso",
+) -> requests.Response:
+    """Faz a requisição HTTP e devolve uma mensagem clara quando o servidor falha."""
+
+    last_error: Optional[Exception] = None
+    for attempt in range(1, HTTP_RETRY_ATTEMPTS + 1):
+        try:
+            response = session.get(url, timeout=timeout, allow_redirects=allow_redirects)
+            response.raise_for_status()
+            return response
+        except requests.RequestException as exc:
+            status_code = getattr(getattr(exc, "response", None), "status_code", None)
+            resolved_url = getattr(getattr(exc, "response", None), "url", url)
+            detail = f"Falha ao acessar {label}: status={status_code}, url={resolved_url}"
+            last_error = requests.HTTPError(detail) if isinstance(exc, requests.HTTPError) else requests.RequestException(detail)
+            if attempt == HTTP_RETRY_ATTEMPTS:
+                break
+            wait_seconds = HTTP_RETRY_BACKOFF_SECONDS * attempt
+            print(f"{detail}. Nova tentativa em {wait_seconds}s ({attempt}/{HTTP_RETRY_ATTEMPTS}).")
+            time.sleep(wait_seconds)
+    raise last_error if last_error else RuntimeError(f"Falha inesperada ao acessar {label}: {url}")
 
 
 def normalize_whitespace(value: str) -> str:
@@ -452,8 +484,7 @@ def parse_dblp_toc(session: requests.Session) -> List[DblpEntry]:
     para a página da SBC.
     """
 
-    response = session.get(DBLP_TOC_URL, timeout=REQUEST_TIMEOUT)
-    response.raise_for_status()
+    response = get_with_status(session, DBLP_TOC_URL, label="índice do dblp")
     response.encoding = "utf-8"
     soup = BeautifulSoup(response.text, "html.parser")
     entries = []
@@ -515,8 +546,7 @@ def parse_article_page(
     if not entry.ee_url:
         raise ValueError(f"Entrada sem link eletrônico: {entry.title}")
 
-    response = session.get(entry.ee_url, timeout=REQUEST_TIMEOUT, allow_redirects=True)
-    response.raise_for_status()
+    response = get_with_status(session, entry.ee_url, label=f"página do artigo '{entry.title}'")
     response.encoding = "utf-8"
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -580,8 +610,7 @@ def parse_article_page(
     pdf_url = (meta.get("citation_pdf_url") or [""])[0]
     article_text = ""
     if pdf_url:
-        pdf_response = session.get(pdf_url, timeout=REQUEST_TIMEOUT)
-        pdf_response.raise_for_status()
+        pdf_response = get_with_status(session, pdf_url, label=f"PDF do artigo '{title}'")
 
         # O JSON guarda a storage_key lógica, e o arquivo é salvo localmente com esse nome.
         pdf_path = download_dir / Path(storage_key).name
@@ -628,7 +657,7 @@ def build_dataset(
     download_dir: Path,
     limit: Optional[int],
     prioritize_portuguese: bool,
-) -> None:
+) -> List[Dict[str, object]]:
     """
     Coordena a extração completa e grava o dataset final em disco.
 
@@ -656,17 +685,24 @@ def build_dataset(
     for index, entry in enumerate(entries, start=1):
         # Define a chave/caminho lógico esperado para cada PDF.
         storage_key = f"files/article_{index:03d}.pdf"
-        article = parse_article_page(
-            session=session,
-            entry=entry,
-            storage_key=storage_key,
-            download_dir=download_dir,
-        )
+        try:
+            article = parse_article_page(
+                session=session,
+                entry=entry,
+                storage_key=storage_key,
+                download_dir=download_dir,
+            )
+        except Exception as exc:
+            print(f"[{index}/{len(entries)}] falha em '{entry.title}': {exc}")
+            output_path.write_text(json.dumps(dataset, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"Progresso parcial salvo em: {output_path}")
+            continue
         dataset.append(article)
+        output_path.write_text(json.dumps(dataset, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"[{index}/{len(entries)}] extraido: {article['titulo']}")
 
-    output_path.write_text(json.dumps(dataset, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Arquivo gerado em: {output_path}")
+    return dataset
 
 
 def main() -> None:
