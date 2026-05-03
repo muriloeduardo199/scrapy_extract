@@ -1,10 +1,14 @@
 # STIL 2023 Scraper e Dashboard
+por Murilo Eduardo e Edmilson de jesus
+
 
 Este projeto extrai artigos do **STIL 2023** a partir da página do `dblp`, segue o link `view` de cada item até a página da **SBC**, baixa os PDFs e gera um arquivo JSON estruturado com metadados e conteúdo textual.
 
 Além do scraper, o projeto também inclui notebooks para uso no **Google Colab**:
 - um notebook para executar a coleta
 - um notebook para gerar estatísticas e dashboard do corpus
+
+
 
 ## Arquivos
 
