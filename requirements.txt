@@ -5,3 +5,4 @@ PyMuPDF
 deep-translator
 langdetect
 spacy
+nltk
