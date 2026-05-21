@@ -16,6 +16,8 @@ Além do scraper, o projeto também inclui notebooks para uso no **Google Colab*
 - [requirements.txt](d:\scrapy_article\requirements.txt): dependências do projeto
 - [stil2023_scraper_colab.ipynb](d:\scrapy_article\stil2023_scraper_colab.ipynb): notebook do Colab para executar o scraper
 - [stil2023_dashboard_colab.ipynb](d:\scrapy_article\stil2023_dashboard_colab.ipynb): notebook do Colab para análise do corpus
+- [stil2023_embeddings_pre_treino_colab.ipynb](d:\scrapy_article\stil2023_embeddings_pre_treino_colab.ipynb): notebook do Colab para Word2Vec, FastText e GloVe pré-treinados
+- [stil2023_embeddings_corpus_colab.ipynb](d:\scrapy_article\stil2023_embeddings_corpus_colab.ipynb): notebook do Colab para treinar Word2Vec, FastText e GloVe no corpus dos artigos e gerar nuvem de palavras
 - [output/stil2023_articles.json](d:\scrapy_article\output\stil2023_articles.json): JSON gerado pela extração
 - [files](d:\scrapy_article\files): PDFs baixados
 
@@ -137,6 +139,20 @@ O notebook:
 - calcula estatísticas
 - mostra tabelas e gráficos
 - gera nuvem de palavras
+
+### Notebooks de embeddings
+
+Use [stil2023_embeddings_pre_treino_colab.ipynb](d:\scrapy_article\stil2023_embeddings_pre_treino_colab.ipynb) para testar modelos pré-treinados de Word2Vec, FastText e GloVe.
+
+Use [stil2023_embeddings_corpus_colab.ipynb](d:\scrapy_article\stil2023_embeddings_corpus_colab.ipynb) para aplicar os três modelos ao corpus dos artigos. Esse notebook:
+
+- carrega o JSON dos artigos
+- limpa e tokeniza o texto
+- gera tabela e nuvem de palavras das palavras mais frequentes
+- treina Word2Vec no corpus
+- treina FastText no corpus
+- treina uma implementação simples de GloVe no corpus
+- salva modelos e resultados
 
 ## Estatísticas do dashboard
 
