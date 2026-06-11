@@ -1,0 +1,343 @@
+{
+  "artigos": 30,
+  "idiomas": {
+    "Português": 29,
+    "Inglês": 1
+  },
+  "tokens": 104575,
+  "types": 14475,
+  "lemmas_distintos": 14383,
+  "sentencas": 6402,
+  "media_tokens_artigo": 3485.83,
+  "media_sentencas_artigo": 213.4,
+  "min_tokens_artigo": 470,
+  "max_tokens_artigo": 6012,
+  "min_sentencas_artigo": 17,
+  "max_sentencas_artigo": 390,
+  "diversidade_lexical": 0.1384,
+  "top_palavras": [
+    {
+      "palavra": "de",
+      "frequencia": 3689
+    },
+    {
+      "palavra": "a",
+      "frequencia": 2249
+    },
+    {
+      "palavra": "ao",
+      "frequencia": 2013
+    },
+    {
+      "palavra": "e",
+      "frequencia": 1935
+    },
+    {
+      "palavra": "the",
+      "frequencia": 1236
+    },
+    {
+      "palavra": "o",
+      "frequencia": 1212
+    },
+    {
+      "palavra": "of",
+      "frequencia": 1054
+    },
+    {
+      "palavra": "que",
+      "frequencia": 1045
+    },
+    {
+      "palavra": "em",
+      "frequencia": 1020
+    },
+    {
+      "palavra": "and",
+      "frequencia": 926
+    }
+  ],
+  "top_pos": [
+    {
+      "classe_gramatical": "NOUN",
+      "frequencia": 50975
+    },
+    {
+      "classe_gramatical": "PUNCT",
+      "frequencia": 39535
+    },
+    {
+      "classe_gramatical": "PROPN",
+      "frequencia": 18318
+    },
+    {
+      "classe_gramatical": "ADP",
+      "frequencia": 10183
+    },
+    {
+      "classe_gramatical": "NUM",
+      "frequencia": 7068
+    },
+    {
+      "classe_gramatical": "DET",
+      "frequencia": 6734
+    },
+    {
+      "classe_gramatical": "VERB",
+      "frequencia": 3387
+    },
+    {
+      "classe_gramatical": "CCONJ",
+      "frequencia": 2437
+    },
+    {
+      "classe_gramatical": "ADJ",
+      "frequencia": 2267
+    },
+    {
+      "classe_gramatical": "SCONJ",
+      "frequencia": 1027
+    },
+    {
+      "classe_gramatical": "AUX",
+      "frequencia": 888
+    },
+    {
+      "classe_gramatical": "ADV",
+      "frequencia": 599
+    },
+    {
+      "classe_gramatical": "PRON",
+      "frequencia": 577
+    },
+    {
+      "classe_gramatical": "PART",
+      "frequencia": 115
+    }
+  ],
+  "tokens_modelo_linguagem": 64806,
+  "unigramas_distintos": 7936,
+  "bigramas_distintos": 32907,
+  "trigramas_distintos": 51121,
+  "top_unigramas": [
+    {
+      "ngrama": "de",
+      "frequencia": 3399,
+      "probabilidade": 0.052448847328951,
+      "termo_1": "de"
+    },
+    {
+      "ngrama": "o",
+      "frequencia": 2419,
+      "probabilidade": 0.0373267907292534,
+      "termo_1": "o"
+    },
+    {
+      "ngrama": "a",
+      "frequencia": 2089,
+      "probabilidade": 0.0322346696293553,
+      "termo_1": "a"
+    },
+    {
+      "ngrama": "ao",
+      "frequencia": 1913,
+      "probabilidade": 0.0295188717094096,
+      "termo_1": "ao"
+    },
+    {
+      "ngrama": "e",
+      "frequencia": 1780,
+      "probabilidade": 0.0274665925994506,
+      "termo_1": "e"
+    },
+    {
+      "ngrama": "em",
+      "frequencia": 1044,
+      "probabilidade": 0.0161096194796778,
+      "termo_1": "em"
+    },
+    {
+      "ngrama": "que",
+      "frequencia": 1004,
+      "probabilidade": 0.0154923926796901,
+      "termo_1": "que"
+    },
+    {
+      "ngrama": "do",
+      "frequencia": 804,
+      "probabilidade": 0.0124062586797518,
+      "termo_1": "do"
+    },
+    {
+      "ngrama": "para",
+      "frequencia": 739,
+      "probabilidade": 0.0114032651297719,
+      "termo_1": "para"
+    },
+    {
+      "ngrama": "da",
+      "frequencia": 655,
+      "probabilidade": 0.0101070888497978,
+      "termo_1": "da"
+    }
+  ],
+  "top_bigramas": [
+    {
+      "ngrama": "ao de",
+      "frequencia": 284,
+      "probabilidade": 0.0043823779029395,
+      "termo_1": "ao",
+      "termo_2": "de"
+    },
+    {
+      "ngrama": "et al",
+      "frequencia": 211,
+      "probabilidade": 0.0032559216109868,
+      "termo_1": "et",
+      "termo_2": "al"
+    },
+    {
+      "ngrama": "o de",
+      "frequencia": 165,
+      "probabilidade": 0.0025460998379754,
+      "termo_1": "o",
+      "termo_2": "de"
+    },
+    {
+      "ngrama": "n ao",
+      "frequencia": 149,
+      "probabilidade": 0.0022992053082323,
+      "termo_1": "n",
+      "termo_2": "ao"
+    },
+    {
+      "ngrama": "para o",
+      "frequencia": 129,
+      "probabilidade": 0.0019905871460535,
+      "termo_1": "para",
+      "termo_2": "o"
+    },
+    {
+      "ngrama": "para a",
+      "frequencia": 129,
+      "probabilidade": 0.0019905871460535,
+      "termo_1": "para",
+      "termo_2": "a"
+    },
+    {
+      "ngrama": "anotac ao",
+      "frequencia": 129,
+      "probabilidade": 0.0019905871460535,
+      "termo_1": "anotac",
+      "termo_2": "ao"
+    },
+    {
+      "ngrama": "s ao",
+      "frequencia": 126,
+      "probabilidade": 0.0019442944217267,
+      "termo_1": "s",
+      "termo_2": "ao"
+    },
+    {
+      "ngrama": "l ngua",
+      "frequencia": 120,
+      "probabilidade": 0.001851708973073,
+      "termo_1": "l",
+      "termo_2": "ngua"
+    },
+    {
+      "ngrama": "s o",
+      "frequencia": 113,
+      "probabilidade": 0.0017436926163104,
+      "termo_1": "s",
+      "termo_2": "o"
+    }
+  ],
+  "top_trigramas": [
+    {
+      "ngrama": "de anotac ao",
+      "frequencia": 48,
+      "probabilidade": 0.0007406950188259,
+      "termo_1": "de",
+      "termo_2": "anotac",
+      "termo_3": "ao"
+    },
+    {
+      "ngrama": "l ngua portuguesa",
+      "frequencia": 47,
+      "probabilidade": 0.0007252638726004,
+      "termo_1": "l",
+      "termo_2": "ngua",
+      "termo_3": "portuguesa"
+    },
+    {
+      "ngrama": "de anota o",
+      "frequencia": 45,
+      "probabilidade": 0.0006944015801493,
+      "termo_1": "de",
+      "termo_2": "anota",
+      "termo_3": "o"
+    },
+    {
+      "ngrama": "anota o de",
+      "frequencia": 39,
+      "probabilidade": 0.0006018147027961,
+      "termo_1": "anota",
+      "termo_2": "o",
+      "termo_3": "de"
+    },
+    {
+      "ngrama": "de opini ao",
+      "frequencia": 39,
+      "probabilidade": 0.0006018147027961,
+      "termo_1": "de",
+      "termo_2": "opini",
+      "termo_3": "ao"
+    },
+    {
+      "ngrama": "em portugu es",
+      "frequencia": 37,
+      "probabilidade": 0.000570952410345,
+      "termo_1": "em",
+      "termo_2": "portugu",
+      "termo_3": "es"
+    },
+    {
+      "ngrama": "classificac ao de",
+      "frequencia": 36,
+      "probabilidade": 0.0005555212641194,
+      "termo_1": "classificac",
+      "termo_2": "ao",
+      "termo_3": "de"
+    },
+    {
+      "ngrama": "o portugu es",
+      "frequencia": 35,
+      "probabilidade": 0.0005400901178939,
+      "termo_1": "o",
+      "termo_2": "portugu",
+      "termo_3": "es"
+    },
+    {
+      "ngrama": "ao sint atica",
+      "frequencia": 34,
+      "probabilidade": 0.0005246589716684,
+      "termo_1": "ao",
+      "termo_2": "sint",
+      "termo_3": "atica"
+    },
+    {
+      "ngrama": "de depend ncia",
+      "frequencia": 33,
+      "probabilidade": 0.0005092278254428,
+      "termo_1": "de",
+      "termo_2": "depend",
+      "termo_3": "ncia"
+    }
+  ],
+  "tokens_treino": 51844,
+  "tokens_teste": 12962,
+  "perplexidade_bigramas": 2611.49,
+  "perplexidade_trigramas": 5617.16,
+  "paragrafos_gerados": "Paragrafo com 100 palavras usando bigramas:\nA linguagem natural e opaci dade no momento o esperadas de aprendizado de fato de anota o custo utilizada para isso sua maioria dos autores informa o di culdade para o m edia dos tweets do petrogold e russo alinhados com seus hiperpar ametros da linguagem como uma tarefa de convers o quadro porque a maioria dos resultados foram utilizados um outro de resultados este estudo presente trabalho descreve as fun o modelo de referente de estrutura que ocorrem em relac ao e verificando se cruzam oslo studies in dicam que o de ocorr encias distintas au ditivas como pano.\n\nParagrafo com 100 palavras usando trigramas:\nA linguagem natural e aprendizado de m quina faz apenas aquilo que mandamos o argumento deve estar a direita outro caminho interessante pode ser visto na figura publiquei estudo da varia o e da fapesb projeto tic texto livre linguagem e tecnologia este trabalho descreve a base de dados e integra letras de canc oes e treinamento explorando as t ecnicas mais sofisticadas baseadas em l ngua portuguesa erro na anota o de substantivos abstratos em rela o parataxis tem como foco investigar as potencialidades do chatgpt n ao sejam obrigat orias e uma an lise utiliza a contagem e.\n"
+}

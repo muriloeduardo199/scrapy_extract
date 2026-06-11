@@ -1,0 +1,2 @@
+Perplexidade bigrama: 2611.49
+Perplexidade trigrama: 5617.16
